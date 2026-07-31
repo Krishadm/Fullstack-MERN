@@ -41,7 +41,7 @@ export default function LoginPage() {
   const onSubmit = (data: LoginFormValues) => {
     loginUser.mutate(data, {
       onSuccess: (res) => {
-        setAuth(res.token, res.user)
+        setAuth(res.token, res.user, res.refreshToken)
         router.push("/dashboard")
       },
       onError: (error: any) => {

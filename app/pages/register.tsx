@@ -46,7 +46,7 @@ export default function RegisterPage() {
   const onSubmit = (data: RegisterFormValues) => {
     registerUser.mutate(data, {
       onSuccess: (res) => {
-        setAuth(res.token, res.user)
+        setAuth(res.token, res.user, res.refreshToken)
         router.push("/dashboard")
       },
       onError: (error: any) => {

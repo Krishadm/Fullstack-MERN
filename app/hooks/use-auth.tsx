@@ -1,16 +1,21 @@
 'use client';
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, useGetMe, setAuthTokenGetter } from '@/lib/api-client';
+import { User, useGetMe, setAuthTokenGetter, setAuthTokenSetter } from '@/lib/api-client';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: User, refreshToken?: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Initialize token getter immediately (module-level) so apiFetch has it before first render
+if (typeof window !== 'undefined') {
+  setAuthTokenGetter(() => localStorage.getItem('re_token'));
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
@@ -19,15 +24,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Wire up the token getter so apiFetch always has the latest token
+  // Wire up the token setter (needs setToken from useState, so stays in effect)
   useEffect(() => {
-    setAuthTokenGetter(() => localStorage.getItem('re_token'));
+    setAuthTokenSetter((t) => { localStorage.setItem('re_token', t); setToken(t); });
   }, []);
 
   const { data: fetchedUser, isLoading: isFetchingMe, error } = useGetMe(!!token);
 
   const logout = useCallback(() => {
     localStorage.removeItem('re_token');
+    localStorage.removeItem('re_refresh_token');
     setToken(null);
     setUser(null);
   }, []);
@@ -46,8 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token, fetchedUser, error, isFetchingMe, logout]);
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, newUser: User, refreshToken?: string) => {
     localStorage.setItem('re_token', newToken);
+    if (refreshToken) localStorage.setItem('re_refresh_token', refreshToken);
     setAuthTokenGetter(() => newToken);
     setToken(newToken);
     setUser(newUser);

@@ -30,7 +30,7 @@ router.post('/images', auth, upload.array('images', 10), (req, res) => {
     return res.status(400).json({ message: 'No files uploaded' });
   }
   const urls = req.files.map(
-    (f) => `${process.env.BASE_URL || 'https://fullstack-mern-be.onrender.com'}/uploads/${f.filename}`
+    (f) => `${process.env.BASE_URL || 'http://localhost:5000'}/uploads/${f.filename}`
   );
   res.json({ urls });
 });

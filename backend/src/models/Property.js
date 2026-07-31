@@ -1,55 +1,30 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const propertySchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true },
-  description: { type: String, required: true },
+const Property = sequelize.define('Property', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  title: { type: DataTypes.STRING, allowNull: false },
+  description: { type: DataTypes.TEXT, allowNull: false },
   type: {
-    type: String,
-    required: true,
-    enum: ['apartment', 'house', 'villa', 'commercial', 'plot', 'pg'],
+    type: DataTypes.ENUM('apartment', 'house', 'villa', 'commercial', 'plot', 'pg'),
+    allowNull: false,
   },
-  status: {
-    type: String,
-    required: true,
-    enum: ['for_sale', 'for_rent'],
-  },
-  price: { type: Number, required: true, min: 1 },
-  city: { type: String, required: true, trim: true },
-  locality: { type: String, required: true, trim: true },
-  address: { type: String, required: true },
-  bedrooms: { type: Number, default: 0, min: 0 },
-  bathrooms: { type: Number, default: 0, min: 0 },
-  area: { type: Number, required: true, min: 1 },
-  images: [{ type: String }],
-  amenities: [{ type: String }],
-  isFurnished: { type: Boolean, default: false },
-  parkingAvailable: { type: Boolean, default: false },
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  inquiryCount: { type: Number, default: 0 },
-  isDeleted: { type: Boolean, default: false, index: true },
-  deletedAt: { type: Date, default: null },
-}, { timestamps: true });
-
-// Auto-exclude soft-deleted docs from all find queries
-propertySchema.pre(/^find/, function () {
-  if (this.getFilter().isDeleted === undefined) {
-    this.where({ isDeleted: false });
-  }
+  status: { type: DataTypes.ENUM('for_sale', 'for_rent'), allowNull: false },
+  price: { type: DataTypes.FLOAT, allowNull: false },
+  city: { type: DataTypes.STRING, allowNull: false },
+  locality: { type: DataTypes.STRING, allowNull: false },
+  address: { type: DataTypes.TEXT, allowNull: false },
+  bedrooms: { type: DataTypes.INTEGER, defaultValue: 0 },
+  bathrooms: { type: DataTypes.INTEGER, defaultValue: 0 },
+  area: { type: DataTypes.FLOAT, allowNull: false },
+  images: { type: DataTypes.ARRAY(DataTypes.TEXT), defaultValue: [] },
+  amenities: { type: DataTypes.ARRAY(DataTypes.TEXT), defaultValue: [] },
+  isFurnished: { type: DataTypes.BOOLEAN, defaultValue: false },
+  parkingAvailable: { type: DataTypes.BOOLEAN, defaultValue: false },
+  ownerId: { type: DataTypes.INTEGER, allowNull: false },
+  inquiryCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+  isDeleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  deletedAt: { type: DataTypes.DATE, defaultValue: null },
 });
 
-// Indexes for scalable search & filtering on 50k+ records
-propertySchema.index({ city: 1 });
-propertySchema.index({ type: 1 });
-propertySchema.index({ status: 1 });
-propertySchema.index({ price: 1 });
-propertySchema.index({ bedrooms: 1 });
-propertySchema.index({ owner: 1 });
-propertySchema.index({ createdAt: -1 });
-// Compound indexes for common filter combos
-propertySchema.index({ city: 1, status: 1, type: 1 });
-propertySchema.index({ city: 1, price: 1 });
-propertySchema.index({ status: 1, price: 1 });
-// Text index for full-text search
-propertySchema.index({ title: 'text', description: 'text', city: 'text', locality: 'text' });
-
-module.exports = mongoose.model('Property', propertySchema);
+module.exports = Property;

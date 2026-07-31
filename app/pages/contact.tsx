@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://fullstack-mern-be.onrender.com'
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000'
 
 export default function ContactPage() {
   const { toast } = useToast()

@@ -1,26 +1,28 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const { sequelize } = require('../config/db');
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  phone: { type: String, required: true, trim: true },
-  password: { type: String, required: true, minlength: 6 },
-  refreshToken: { type: String, default: null },
-}, { timestamps: true });
-
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+const User = sequelize.define('User', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, allowNull: false },
+  email: { type: DataTypes.STRING, allowNull: false, unique: true },
+  phone: { type: DataTypes.STRING, allowNull: false },
+  password: { type: DataTypes.STRING, allowNull: false },
+  refreshToken: { type: DataTypes.TEXT, defaultValue: null },
 });
 
-userSchema.methods.comparePassword = function (plain) {
+User.beforeSave(async (user) => {
+  if (user.changed('password')) {
+    user.password = await bcrypt.hash(user.password, 10);
+  }
+});
+
+User.prototype.comparePassword = function (plain) {
   return bcrypt.compare(plain, this.password);
 };
 
-userSchema.methods.toSafeObject = function () {
-  return { id: this._id, name: this.name, email: this.email, phone: this.phone };
+User.prototype.toSafeObject = function () {
+  return { id: this.id, name: this.name, email: this.email, phone: this.phone };
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;

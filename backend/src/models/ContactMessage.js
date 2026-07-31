@@ -1,12 +1,12 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const contactMessageSchema = new mongoose.Schema({
-  name:    { type: String, required: true, trim: true },
-  email:   { type: String, required: true, trim: true },
-  phone:   { type: String, trim: true, default: '' },
-  message: { type: String, required: true, trim: true, maxlength: 2000 },
-}, { timestamps: true });
+const ContactMessage = sequelize.define('ContactMessage', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, allowNull: false },
+  email: { type: DataTypes.STRING, allowNull: false },
+  phone: { type: DataTypes.STRING, defaultValue: '' },
+  message: { type: DataTypes.STRING(2000), allowNull: false },
+});
 
-contactMessageSchema.index({ createdAt: -1 });
-
-module.exports = mongoose.model('ContactMessage', contactMessageSchema);
+module.exports = ContactMessage;

@@ -68,25 +68,59 @@ export interface PropertiesResponse {
   totalPages: number;
 }
 
-// ---- Auth token getter ----
+// ---- Auth token getter/setter ----
 let _tokenGetter: (() => string | null) | null = null;
-export function setAuthTokenGetter(fn: () => string | null) {
-  _tokenGetter = fn;
-}
+let _tokenSetter: ((token: string) => void) | null = null;
+export function setAuthTokenGetter(fn: () => string | null) { _tokenGetter = fn; }
+export function setAuthTokenSetter(fn: (token: string) => void) { _tokenSetter = fn; }
 
-// ---- Base fetch ----
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://fullstack-mern-be.onrender.com';
+// ---- Base fetch with silent refresh ----
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000';
+
+let _refreshPromise: Promise<string> | null = null;
+
+async function tryRefresh(): Promise<string> {
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = (async () => {
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('re_refresh_token') : null;
+    if (!refreshToken) throw new Error('No refresh token');
+    const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) throw new Error('Refresh failed');
+    const { token } = await res.json();
+    localStorage.setItem('re_token', token);
+    _tokenSetter?.(token);
+    return token;
+  })().finally(() => { _refreshPromise = null; });
+  return _refreshPromise;
+}
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const token = _tokenGetter?.();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-  });
+  const makeRequest = (t: string | null) =>
+    fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(t ? { Authorization: `Bearer ${t}` } : {}),
+        ...options?.headers,
+      },
+    });
+
+  let res = await makeRequest(token);
+
+  if (res.status === 401 && token) {
+    try {
+      const newToken = await tryRefresh();
+      res = await makeRequest(newToken);
+    } catch {
+      // refresh failed — let the error propagate naturally
+    }
+  }
+
   if (!res.ok) {
     const text = await res.text();
     let msg = text;
@@ -111,14 +145,14 @@ export function useGetMe(enabled = true) {
 export function useLoginUser() {
   return useMutation({
     mutationFn: (data: { email: string; password: string }) =>
-      apiFetch<{ token: string; user: User }>('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+      apiFetch<{ token: string; refreshToken: string; user: User }>('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   });
 }
 
 export function useRegisterUser() {
   return useMutation({
     mutationFn: (data: { name: string; email: string; phone: string; password: string }) =>
-      apiFetch<{ token: string; user: User }>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+      apiFetch<{ token: string; refreshToken: string; user: User }>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   });
 }
 

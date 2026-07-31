@@ -1,14 +1,17 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const inquirySchema = new mongoose.Schema({
-  property: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
-  fromUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  message: { type: String, required: true, trim: true, maxlength: 1000 },
-}, { timestamps: true });
+const Inquiry = sequelize.define(
+  'Inquiry',
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    propertyId: { type: DataTypes.INTEGER, allowNull: false },
+    fromUserId: { type: DataTypes.INTEGER, allowNull: false },
+    message: { type: DataTypes.STRING(1000), allowNull: false },
+  },
+  {
+    indexes: [{ unique: true, fields: ['propertyId', 'fromUserId'] }],
+  }
+);
 
-// Prevent duplicate inquiries from same user on same property
-inquirySchema.index({ property: 1, fromUser: 1 }, { unique: true });
-inquirySchema.index({ fromUser: 1 });
-inquirySchema.index({ property: 1 });
-
-module.exports = mongoose.model('Inquiry', inquirySchema);
+module.exports = Inquiry;
