@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Trash2, ImagePlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fullstack-mern-be.onrender.com';
 
 interface ImageUploaderProps {
   images: string[];
