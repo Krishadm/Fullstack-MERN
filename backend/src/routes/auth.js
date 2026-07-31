@@ -5,8 +5,11 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
-const signToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+const signAccessToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '15m' });
+
+const signRefreshToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
 /**
  * @swagger
@@ -46,8 +49,11 @@ router.post(
     try {
       const { name, email, phone, password } = req.body;
       const user = await User.create({ name, email, phone, password });
-      const token = signToken(user._id);
-      res.status(201).json({ token, user: user.toSafeObject() });
+      const token = signAccessToken(user._id);
+      const refreshToken = signRefreshToken(user._id);
+      user.refreshToken = refreshToken;
+      await user.save();
+      res.status(201).json({ token, refreshToken, user: user.toSafeObject() });
     } catch (err) {
       next(err);
     }
@@ -91,8 +97,11 @@ router.post(
       if (!user || !(await user.comparePassword(password))) {
         return res.status(401).json({ message: 'Invalid email or password' });
       }
-      const token = signToken(user._id);
-      res.json({ token, user: user.toSafeObject() });
+      const token = signAccessToken(user._id);
+      const refreshToken = signRefreshToken(user._id);
+      user.refreshToken = refreshToken;
+      await user.save();
+      res.json({ token, refreshToken, user: user.toSafeObject() });
     } catch (err) {
       next(err);
     }
@@ -115,6 +124,62 @@ router.post(
  */
 router.get('/me', auth, (req, res) => {
   res.json(req.user.toSafeObject());
+});
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refreshToken]
+ *             properties:
+ *               refreshToken: { type: string }
+ *     responses:
+ *       200:
+ *         description: New access token
+ *       401:
+ *         description: Invalid refresh token
+ */
+router.post('/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ message: 'Refresh token required' });
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+    const token = signAccessToken(user._id);
+    res.json({ token });
+  } catch {
+    res.status(401).json({ message: 'Invalid or expired refresh token' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
+router.post('/logout', auth, async (req, res) => {
+  req.user.refreshToken = null;
+  await req.user.save();
+  res.json({ message: 'Logged out successfully' });
 });
 
 module.exports = router;

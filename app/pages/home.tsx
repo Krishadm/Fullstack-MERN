@@ -253,7 +253,7 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/properties">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-13 px-8 text-base w-full sm:w-auto gap-2">
+              <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/10 h-13 px-8 text-base w-full sm:w-auto gap-2">
                 Browse Properties <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>

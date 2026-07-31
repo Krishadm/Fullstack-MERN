@@ -6,14 +6,11 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   phone: { type: String, required: true, trim: true },
   password: { type: String, required: true, minlength: 6 },
-  originalPassword: { type: String },
+  refreshToken: { type: String, default: null },
 }, { timestamps: true });
-
-// email index already created by unique:true in schema definition
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.originalPassword = this.password; // store plain text before hashing
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });

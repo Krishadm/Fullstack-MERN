@@ -19,7 +19,7 @@ export function Footer() {
                 <Building2 className="h-4 w-4 text-white" />
               </div>
               <span className="font-serif text-xl font-bold text-white">
-                House<span className="text-primary">Find</span>
+                Estate<span className="text-primary">Edge</span>
               </span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-5">
@@ -96,7 +96,7 @@ export function Footer() {
 
         <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} HouseFind Real Estate. All rights reserved.
+            © {new Date().getFullYear()} EstateEdge Real Estate. All rights reserved.
           </p>
           <p className="text-xs text-slate-600">
             Built with ❤️ for India's property seekers

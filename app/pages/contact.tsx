@@ -11,15 +11,27 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://fullstack-mern
 export default function ContactPage() {
   const { toast } = useToast()
   const [form, setForm] = React.useState({ name: "", email: "", phone: "", message: "" })
+  const [errors, setErrors] = React.useState<Record<string, string>>({})
   const [loading, setLoading] = React.useState(false)
   const [sent, setSent] = React.useState(false)
 
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!form.name.trim() || form.name.trim().length < 2) e.name = "Name must be at least 2 characters."
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email address."
+    if (form.phone && !/^[\+]?[0-9\s\-]{7,15}$/.test(form.phone)) e.phone = "Enter a valid phone number."
+    if (!form.message.trim() || form.message.trim().length < 10) e.message = "Message must be at least 10 characters."
+    return e
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name || !form.email || !form.message) {
-      toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" })
+    const errs = validate()
+    if (Object.keys(errs).length) {
+      setErrors(errs)
       return
     }
+    setErrors({})
     setLoading(true)
     try {
       const res = await fetch(`${BASE_URL}/api/contact`, {
@@ -114,15 +126,18 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-1.5">
                   <Label>Full Name <span className="text-destructive">*</span></Label>
-                  <Input placeholder="John Doe" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                  <Input placeholder="John Doe" value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setErrors(p => ({ ...p, name: '' })) }} className={errors.name ? 'border-destructive focus-visible:ring-destructive/50' : ''} />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Email <span className="text-destructive">*</span></Label>
-                  <Input type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                  <Input type="email" placeholder="you@example.com" value={form.email} onChange={e => { setForm(f => ({ ...f, email: e.target.value })); setErrors(p => ({ ...p, email: '' })) }} className={errors.email ? 'border-destructive focus-visible:ring-destructive/50' : ''} />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Phone</Label>
-                  <Input type="tel" placeholder="+91 9876543210" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                  <Input type="tel" placeholder="+91 9876543210" value={form.phone} onChange={e => { setForm(f => ({ ...f, phone: e.target.value })); setErrors(p => ({ ...p, phone: '' })) }} className={errors.phone ? 'border-destructive focus-visible:ring-destructive/50' : ''} />
+                  {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Message <span className="text-destructive">*</span></Label>
@@ -130,9 +145,10 @@ export default function ContactPage() {
                     rows={4}
                     placeholder="How can we help you?"
                     value={form.message}
-                    onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    onChange={e => { setForm(f => ({ ...f, message: e.target.value })); setErrors(p => ({ ...p, message: '' })) }}
+                    className={`w-full px-3 py-2 rounded-lg border bg-background text-sm text-foreground resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${errors.message ? 'border-destructive focus-visible:ring-destructive/50' : 'border-input'}`}
                   />
+                  {errors.message && <p className="text-xs text-destructive">{errors.message}</p>}
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
                   <MessageCircle className="w-4 h-4 mr-2" />

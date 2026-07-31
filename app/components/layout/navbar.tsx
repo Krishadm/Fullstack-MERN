@@ -44,7 +44,7 @@ export function Navbar() {
               <Building2 className="h-4.5 w-4.5 text-white" />
             </div>
             <span className="font-serif text-xl font-bold text-foreground tracking-tight">
-              House<span className="text-primary">Find</span>
+              Estate<span className="text-primary">Edge</span>
             </span>
           </Link>
 
