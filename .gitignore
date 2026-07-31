@@ -21,6 +21,10 @@ node_modules
 # production
 /build
 
+# uploaded files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # misc
 .DS_Store
 *.pem
