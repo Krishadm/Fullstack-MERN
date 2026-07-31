@@ -21,7 +21,7 @@ app.use(
   })
 );
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'https://fullstack-mern-q872.onrender.com', credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10kb' }));
 
 // Serve uploaded images as static files
